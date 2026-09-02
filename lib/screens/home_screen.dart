@@ -168,7 +168,11 @@ class _HomeScreenState extends State<HomeScreen>
                 value: 'reset',
                 child: Row(
                   children: [
-                    Icon(Icons.cleaning_services_outlined, size: 20, color: Color(0xFFDC2626)),
+                    Icon(
+                      Icons.cleaning_services_outlined,
+                      size: 20,
+                      color: Color(0xFFDC2626),
+                    ),
                     SizedBox(width: 8),
                     Text('تصفير وحذف جميع البنود'),
                   ],
@@ -360,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen>
               ],
             ),
           ),
-          const SizedBox(height: 60),
+          SizedBox(height: (MediaQuery.viewPaddingOf(context).bottom) + 60),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
