@@ -110,6 +110,60 @@ class EzbaPeriod {
     return settlements;
   }
 
+  /// حساب تسوية مفصّلة بند بند: من يدفع لمن بسبب كل بند على حدة
+  List<MemberPaymentSummary> calculateDetailedSettlements() {
+    // Map<memberId, List<ItemSettlement>> — ما يدفعه كل عضو مقسومًا بالبنود
+    final Map<String, List<ItemSettlement>> payerMap = {};
+
+    for (final item in items) {
+      if (item.paidByMemberId == null) continue; // بند بدون من دفع — تجاهل
+      final payer = members.firstWhere(
+        (m) => m.id == item.paidByMemberId,
+        orElse: () => Member(id: item.paidByMemberId!, name: '?'),
+      );
+
+      for (final member in members) {
+        if (member.id == item.paidByMemberId) continue; // الدافع لا يحتاج تحويل لنفسه
+        final share = item.getShareForMember(member.id, members);
+        if (share < 0.01) continue;
+
+        payerMap.putIfAbsent(member.id, () => []);
+        payerMap[member.id]!.add(ItemSettlement(
+          fromMemberId: member.id,
+          fromMemberName: member.name,
+          toMemberId: payer.id,
+          toMemberName: payer.name,
+          amount: share,
+          itemTitle: item.title,
+        ));
+      }
+    }
+
+    // بناء القائمة النهائية مرتبة بترتيب الأعضاء
+    final result = <MemberPaymentSummary>[];
+    for (final member in members) {
+      final breakdowns = payerMap[member.id] ?? [];
+      if (breakdowns.isEmpty) continue;
+
+      // دمج بنود تذهب لنفس المستلم
+      final grouped = <String, List<ItemSettlement>>{};
+      for (final b in breakdowns) {
+        grouped.putIfAbsent(b.toMemberId, () => []).add(b);
+      }
+
+      // إجمالي ما يدفعه هذا العضو
+      final total = breakdowns.fold(0.0, (s, b) => s + b.amount);
+
+      result.add(MemberPaymentSummary(
+        memberId: member.id,
+        memberName: member.name,
+        totalToPay: total,
+        breakdowns: breakdowns,
+      ));
+    }
+    return result;
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,

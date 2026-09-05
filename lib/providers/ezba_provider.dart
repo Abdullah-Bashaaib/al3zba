@@ -290,6 +290,28 @@ class EzbaProvider extends ChangeNotifier {
     }
 
     final settlements = p.calculateSettlements();
+    final detailed = p.calculateDetailedSettlements();
+
+    // ─── قسم: خلاصة ما سيدفعه كل طرف ولمن (مفصّل بالبنود)
+    if (detailed.isNotEmpty) {
+      buffer.writeln('━━━━━━━━━━━━━━━━━━━━');
+      buffer.writeln('✍🏼 *خلاصة ما سيدفعه كل طرف ولمن ..*\n');
+      for (final s in detailed) {
+        buffer.writeln(
+          '> طرف أهل *${s.memberName}* ( *${EzbaFormatters.formatCurrency(s.totalToPay, p.currency)}* )',
+        );
+        int idx = 1;
+        for (final b in s.breakdowns) {
+          buffer.writeln(
+            '$idx. ${b.itemTitle} = *${EzbaFormatters.formatCurrency(b.amount, p.currency)}*'
+            '${b.toMemberId != '' ? ' ( لـ ${b.toMemberName} )' : ''}',
+          );
+          idx++;
+        }
+        buffer.writeln();
+      }
+    }
+
     if (settlements.isNotEmpty) {
       buffer.writeln('━━━━━━━━━━━━━━━━━━━━');
       buffer.writeln('🔄 *مقترحات التسوية وتصفية الحسابات:*');

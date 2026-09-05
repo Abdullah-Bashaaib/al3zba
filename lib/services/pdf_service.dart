@@ -1,7 +1,9 @@
 import 'dart:typed_data';
+
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+
 import '../models/ezba_period.dart';
 import '../utils/formatters.dart';
 
@@ -11,16 +13,15 @@ class PdfService {
     final pdf = pw.Document();
 
     // Load RB Arabic font from local assets
-    final fontRegularBytes = await rootBundle.load('assets/font/rb-regular.ttf');
+    final fontRegularBytes = await rootBundle.load(
+      'assets/font/rb-regular.ttf',
+    );
     final fontBoldBytes = await rootBundle.load('assets/font/rb-bold.ttf');
 
     final fontBase = pw.Font.ttf(fontRegularBytes);
     final fontBold = pw.Font.ttf(fontBoldBytes);
 
-    final theme = pw.ThemeData.withFont(
-      base: fontBase,
-      bold: fontBold,
-    );
+    final theme = pw.ThemeData.withFont(base: fontBase, bold: fontBold);
 
     // Primary table colors matching the reference PDF
     const headerBgColor = PdfColor.fromInt(0xFF2B78E4); // Classic bright blue
@@ -32,11 +33,7 @@ class PdfService {
     final items = period.items;
 
     // Headers in RTL order: البند, التكلفة, [Members...]
-    final headers = [
-      'البند',
-      'التكلفة',
-      ...members.map((m) => m.name),
-    ];
+    final headers = ['البند', 'التكلفة', ...members.map((m) => m.name)];
 
     // Data rows
     final tableRows = <List<String>>[];
@@ -44,10 +41,12 @@ class PdfService {
       final row = <String>[
         item.title,
         EzbaFormatters.formatCurrency(item.totalCost, period.currency),
-        ...members.map((m) => EzbaFormatters.formatCurrency(
-              item.getShareForMember(m.id, members),
-              period.currency,
-            )),
+        ...members.map(
+          (m) => EzbaFormatters.formatCurrency(
+            item.getShareForMember(m.id, members),
+            period.currency,
+          ),
+        ),
       ];
       tableRows.add(row);
     }
@@ -56,10 +55,12 @@ class PdfService {
     final totalRow = <String>[
       'الإجمالي',
       EzbaFormatters.formatCurrency(period.totalExpenses, period.currency),
-      ...members.map((m) => EzbaFormatters.formatCurrency(
-            period.getMemberTotalShare(m.id),
-            period.currency,
-          )),
+      ...members.map(
+        (m) => EzbaFormatters.formatCurrency(
+          period.getMemberTotalShare(m.id),
+          period.currency,
+        ),
+      ),
     ];
 
     pdf.addPage(
@@ -114,8 +115,9 @@ class PdfService {
                       ),
                       decoration: pw.BoxDecoration(
                         color: alternateRowColor,
-                        borderRadius:
-                            const pw.BorderRadius.all(pw.Radius.circular(6)),
+                        borderRadius: const pw.BorderRadius.all(
+                          pw.Radius.circular(6),
+                        ),
                       ),
                       child: pw.Text(
                         'إجمالي المصاريف: ${EzbaFormatters.formatCurrency(period.totalExpenses, period.currency)}',
@@ -136,10 +138,7 @@ class PdfService {
           pw.Directionality(
             textDirection: pw.TextDirection.rtl,
             child: pw.Table(
-              border: pw.TableBorder.all(
-                color: borderColor,
-                width: 0.8,
-              ),
+              border: pw.TableBorder.all(color: borderColor, width: 0.8),
               children: [
                 // Header
                 pw.TableRow(
@@ -188,8 +187,9 @@ class PdfService {
                         ),
                         child: pw.Text(
                           cellValue,
-                          textAlign:
-                              isItemName ? pw.TextAlign.right : pw.TextAlign.center,
+                          textAlign: isItemName
+                              ? pw.TextAlign.right
+                              : pw.TextAlign.center,
                           style: pw.TextStyle(
                             fontSize: 10,
                             fontWeight: (isItemName || isTotalCost)
@@ -219,8 +219,9 @@ class PdfService {
                       ),
                       child: pw.Text(
                         value,
-                        textAlign:
-                            idx == 0 ? pw.TextAlign.right : pw.TextAlign.center,
+                        textAlign: idx == 0
+                            ? pw.TextAlign.right
+                            : pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: PdfColors.white,
                           fontSize: 11,
@@ -244,10 +245,7 @@ class PdfService {
             margin: const pw.EdgeInsets.only(top: 16),
             child: pw.Text(
               'تم إنشاء هذا التقرير عبر تطبيق العزبة • صفحة ${context.pageNumber} من ${context.pagesCount}',
-              style: const pw.TextStyle(
-                fontSize: 9,
-                color: PdfColors.grey500,
-              ),
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey500),
             ),
           ),
         ),
@@ -259,108 +257,245 @@ class PdfService {
 
   static pw.Widget _buildSummarySection(EzbaPeriod period, pw.ThemeData theme) {
     final settlements = period.calculateSettlements();
+    final detailed = period.calculateDetailedSettlements();
+
+    const sectionBg = PdfColor.fromInt(0xFFF8FAFC);
+    const borderCol = PdfColor.fromInt(0xFFE2E8F0);
+    const headerBlue = PdfColor.fromInt(0xFF2B78E4);
+    const darkBg = PdfColor.fromInt(0xFF1E3A8A);
+    const orangeBg = PdfColor.fromInt(0xFFFFF7ED);
+    const greenBg = PdfColor.fromInt(0xFFDCFCE7);
 
     return pw.Directionality(
       textDirection: pw.TextDirection.rtl,
-      child: pw.Container(
-        padding: const pw.EdgeInsets.all(12),
-        decoration: pw.BoxDecoration(
-          color: const PdfColor.fromInt(0xFFF8FAFC),
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-          border: pw.Border.all(
-            color: const PdfColor.fromInt(0xFFE2E8F0),
-            width: 1,
-          ),
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              'ملخص الحسابات ومستحقات الأعضاء',
-              style: pw.TextStyle(
-                fontSize: 12,
-                fontWeight: pw.FontWeight.bold,
-                color: const PdfColor.fromInt(0xFF1E293B),
-              ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        children: [
+          // ═══════════════════════════════════════════════════
+          // قسم 1 — ملخص حصص الأعضاء (النصيب / المدفوع / الصافي)
+          // ═══════════════════════════════════════════════════
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: sectionBg,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              border: pw.Border.all(color: borderCol, width: 1),
             ),
-            pw.SizedBox(height: 8),
-            pw.Row(
+            child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Expanded(
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: period.members.map((m) {
-                      final net = period.getMemberNetBalance(m.id);
-                      final share = period.getMemberTotalShare(m.id);
-                      final paid = period.getMemberTotalPaid(m.id);
-
-                      String statusText;
-                      PdfColor statusColor;
-
-                      if (net.abs() < 0.01) {
-                        statusText = 'خالص';
-                        statusColor = PdfColors.grey700;
-                      } else if (net > 0) {
-                        statusText =
-                            'له: +${EzbaFormatters.formatCurrency(net, period.currency)}';
-                        statusColor = PdfColors.green700;
-                      } else {
-                        statusText =
-                            'عليه: ${EzbaFormatters.formatCurrency(net.abs(), period.currency)}';
-                        statusColor = PdfColors.red700;
-                      }
-
-                      return pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                        child: pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                          children: [
-                            pw.Text(
-                              '${m.name}: (النصيب: ${EzbaFormatters.formatAmount(share)} | دفع: ${EzbaFormatters.formatAmount(paid)})',
-                              style: const pw.TextStyle(fontSize: 9),
-                            ),
-                            pw.Text(
-                              statusText,
-                              style: pw.TextStyle(
-                                fontSize: 9,
-                                fontWeight: pw.FontWeight.bold,
-                                color: statusColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                pw.Text(
+                  'ملخص الحسابات ومستحقات الأعضاء',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                    color: const PdfColor.fromInt(0xFF1E293B),
                   ),
                 ),
+                pw.SizedBox(height: 8),
+                ...period.members.map((m) {
+                  final net = period.getMemberNetBalance(m.id);
+                  final share = period.getMemberTotalShare(m.id);
+                  final paid = period.getMemberTotalPaid(m.id);
+
+                  String statusText;
+                  PdfColor statusColor;
+                  if (net.abs() < 0.01) {
+                    statusText = 'خالص ✓';
+                    statusColor = PdfColors.grey700;
+                  } else if (net > 0) {
+                    statusText =
+                        'له: +${EzbaFormatters.formatCurrency(net, period.currency)}';
+                    statusColor = PdfColors.green700;
+                  } else {
+                    statusText =
+                        'عليه: ${EzbaFormatters.formatCurrency(net.abs(), period.currency)}';
+                    statusColor = PdfColors.red700;
+                  }
+
+                  return pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          '${m.name}:  النصيب: ${EzbaFormatters.formatAmount(share)}  |  دفع: ${EzbaFormatters.formatAmount(paid)}',
+                          style: const pw.TextStyle(fontSize: 9),
+                        ),
+                        pw.Text(
+                          statusText,
+                          style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
               ],
             ),
-            if (settlements.isNotEmpty) ...[
-              pw.SizedBox(height: 8),
-              pw.Divider(color: const PdfColor.fromInt(0xFFCBD5E1), thickness: 0.5),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                'مقترحات التسوية الفورية:',
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(0xFF0F766E),
-                ),
+          ),
+
+          if (detailed.isNotEmpty) ...[
+            pw.SizedBox(height: 14),
+
+            // ═══════════════════════════════════════════════════
+            // قسم 2 — خلاصة ما سيدفعه كل طرف ولمن (مفصّل بالبنود)
+            // ═══════════════════════════════════════════════════
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: sectionBg,
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                border: pw.Border.all(color: borderCol, width: 1),
               ),
-              pw.SizedBox(height: 4),
-              ...settlements.map((s) {
-                return pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
-                  child: pw.Text(
-                    '• ${s.fromMemberName} يدفع لـ ${s.toMemberName} مبلغ: ${EzbaFormatters.formatCurrency(s.amount, period.currency)}',
-                    style: const pw.TextStyle(fontSize: 9),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // عنوان القسم
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: pw.BoxDecoration(
+                      color: headerBlue,
+                      borderRadius: const pw.BorderRadius.all(
+                        pw.Radius.circular(6),
+                      ),
+                    ),
+                    child: pw.Text(
+                      'خلاصة ما سيدفعه كل طرف ولمن',
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.white,
+                      ),
+                    ),
                   ),
-                );
-              }),
-            ],
+                  pw.SizedBox(height: 10),
+
+                  // بطاقة لكل عضو
+                  ...detailed.map((s) {
+                    final isZero = s.totalToPay < 0.01;
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 10),
+                      child: pw.Container(
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: borderCol, width: 0.8),
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(6),
+                          ),
+                        ),
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                          children: [
+                            // رأس بطاقة العضو
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: pw.BoxDecoration(
+                                color: isZero ? greenBg : orangeBg,
+                                borderRadius: const pw.BorderRadius.only(
+                                  topLeft: pw.Radius.circular(6),
+                                  topRight: pw.Radius.circular(6),
+                                ),
+                              ),
+                              child: pw.Row(
+                                mainAxisAlignment:
+                                    pw.MainAxisAlignment.spaceBetween,
+                                children: [
+                                  pw.Text(
+                                    '> طرف أهل ${s.memberName}',
+                                    style: pw.TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: isZero
+                                          ? PdfColors.green800
+                                          : const PdfColor.fromInt(0xFFEA580C),
+                                    ),
+                                  ),
+                                  pw.Text(
+                                    isZero
+                                        ? 'لا يوجد عليه شيء'
+                                        : EzbaFormatters.formatCurrency(
+                                            s.totalToPay,
+                                            period.currency,
+                                          ),
+                                    style: pw.TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: isZero
+                                          ? PdfColors.green800
+                                          : PdfColors.red800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // بنود التفصيل
+                            if (!isZero)
+                              pw.Padding(
+                                padding: const pw.EdgeInsets.fromLTRB(
+                                  12,
+                                  6,
+                                  12,
+                                  8,
+                                ),
+                                child: pw.Column(
+                                  crossAxisAlignment:
+                                      pw.CrossAxisAlignment.start,
+                                  children: s.breakdowns.asMap().entries.map((
+                                    entry,
+                                  ) {
+                                    final idx = entry.key;
+                                    final b = entry.value;
+                                    return pw.Padding(
+                                      padding: const pw.EdgeInsets.symmetric(
+                                        vertical: 2,
+                                      ),
+                                      child: pw.Row(
+                                        mainAxisAlignment:
+                                            pw.MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          pw.Text(
+                                            '${idx + 1}. ${b.itemTitle}  ( لـ ${b.toMemberName} )',
+                                            style: const pw.TextStyle(
+                                              fontSize: 9,
+                                            ),
+                                          ),
+                                          pw.Text(
+                                            EzbaFormatters.formatCurrency(
+                                              b.amount,
+                                              period.currency,
+                                            ),
+                                            style: pw.TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: pw.FontWeight.bold,
+                                              color: headerBlue,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
