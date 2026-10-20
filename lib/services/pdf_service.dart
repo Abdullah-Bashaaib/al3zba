@@ -256,13 +256,13 @@ class PdfService {
   }
 
   static pw.Widget _buildSummarySection(EzbaPeriod period, pw.ThemeData theme) {
-    final settlements = period.calculateSettlements();
+    // final settlements = period.calculateSettlements();
     final detailed = period.calculateDetailedSettlements();
 
     const sectionBg = PdfColor.fromInt(0xFFF8FAFC);
     const borderCol = PdfColor.fromInt(0xFFE2E8F0);
     const headerBlue = PdfColor.fromInt(0xFF2B78E4);
-    const darkBg = PdfColor.fromInt(0xFF1E3A8A);
+    // const darkBg = PdfColor.fromInt(0xFF1E3A8A);
     const orangeBg = PdfColor.fromInt(0xFFFFF7ED);
     const greenBg = PdfColor.fromInt(0xFFDCFCE7);
 
